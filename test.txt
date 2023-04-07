@@ -1,0 +1,4 @@
+This is an example file.
+It contains some text.
+This is line 3.
+Line 4 is here.
