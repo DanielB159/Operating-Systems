@@ -20,6 +20,10 @@ char* findLibrary(char *command) {
     while (dir != NULL) {
         // Construct the full path to the command
         char *command_path = (char *)malloc(COMMAND_PATH_SIZE*sizeof(char));
+        if (command_path == NULL) {
+            // if the memory allocation has failed, notify the shell to free memory and perror
+            return command;
+        }
         snprintf(command_path, COMMAND_PATH_SIZE*sizeof(char), "%s/%s", dir, command);
         // Check if the command exists in this directory using access()
         if (access(command_path, F_OK) == 0) {
@@ -62,11 +66,24 @@ void shellLoop() {
         }
         // initializing the array of arguments to pass to execv
         char** arguments = (char**)malloc((numTokens + 1) * sizeof(char *));
+        // if the allocation has failed, free all memory and perror
+        if (arguments == NULL) {
+            perror("malloc failed");
+        }
         // tokenizing the userString again but saving all of the arguments
         token2 = strtok(userStringCpy, delim);
         int i;
         for (i = 0; token2 != NULL; i++) {
             arguments[i] = (char*)malloc(sizeof(token2) + 1);
+            // if the allocation has failed, fre all memory and perror
+            if (arguments[i] = NULL) {
+                int t;
+                for (t = 0; t < i; t++) {
+                    free(arguments[t]);
+                }
+                free(arguments);
+                perror("malloc failed");
+            }
             strcpy(arguments[i], token2);
             token2 = strtok(NULL, delim);
         }
@@ -74,7 +91,15 @@ void shellLoop() {
         arguments[i] = NULL;
         // finding the path to the command
         char *pathToDir = findLibrary(command);
-        
+        // check to see if the malloc in the function falied
+        if (pathToDir == command) {
+            int k;
+            for (k = 0; k < numTokens - 1; k++) {
+            free(arguments[k]);
+            }
+            free(arguments);
+            perror("malloc failed");
+        }
         // forking and executing the command in the child
         int stat;
         int pid = fork();
