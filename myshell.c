@@ -9,8 +9,10 @@
 #define COMMAND_PATH_SIZE 1024
 
 char* findLibrary(char *command) {
+    printf("this is the command: %s\n", command);
     // this buffer will hold the path to the command 
-    char *path = (char *)malloc(sizeof(char) * COMMAND_PATH_SIZE);
+    char *path = (char *)malloc(COMMAND_PATH_SIZE);
+    printf("did this malloc\n");
     char *whichString = "which";
     char toRun[6 + COMMAND_BUFFER_SIZE];
     sprintf(toRun, "%s %s", whichString, command);
@@ -19,6 +21,7 @@ char* findLibrary(char *command) {
     if (pipe == NULL) {
         exit(1);
     }
+    printf("did i get to this line\n");
     // read the output to the path buffer
     if (fgets(path, sizeof(char) * COMMAND_PATH_SIZE, pipe) == NULL) {
         exit(1);
@@ -27,6 +30,7 @@ char* findLibrary(char *command) {
     null terminate the newline character at the end of the "path". 
     strcspn returns the index before the first appearance of "\n"
     */
+    printf("got to this line too\n");
     path[strcspn(path, "\n")] = '\0'; 
     pclose(pipe);
     return path;
@@ -77,6 +81,7 @@ void shellLoop(char* dir) {
         arguments[i] = NULL;
         // finding the path to the 
         char *pathToDir = findLibrary(command);
+        printf("got here\n");
         for (int j = 0; j <= numTokens; j++) {
             printf("this is the %d: %s\n", j, arguments[j]);
         }
