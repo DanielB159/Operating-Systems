@@ -76,6 +76,10 @@ void shellLoop() {
         // if the allocation has failed, free all memory and perror
         if (arguments == NULL) {
             perror("malloc failed");
+            int t;
+            for (t = 0; t < curNumCummands; t++) {
+                free(historyCommands[t]);
+            }
         }
         // tokenizing the userString again but saving all of the arguments
         token2 = strtok(userStringCpy2, delim);
@@ -103,6 +107,18 @@ void shellLoop() {
         if (!strcmp(command, "history")) {
             int commandLength = (MAX_PID_CHAR_LENGTH + strlen(userString) + 2)*sizeof(char);
             historyCommands[curNumCummands] = (char *)malloc(commandLength);
+            // check if the malloc failed. If so, free all allocated memory and perror
+            if (historyCommands[curNumCummands] == NULL) {
+                int l;
+                for (l = 0; l < numTokens - 1; l++) {
+                    free(arguments[l]);
+                }
+                free(arguments);
+                for (l = 0; l < curNumCummands; l++) {
+                    free(historyCommands[l]);
+                }
+                perror("malloc failed");
+            }
             snprintf(historyCommands[curNumCummands], commandLength, "%d %s", getpid(), userString);
             curNumCummands++;
             int c;
@@ -114,6 +130,18 @@ void shellLoop() {
             chdir(arguments[1]);
             int commandLength = (MAX_PID_CHAR_LENGTH + strlen(userString) + 2)*sizeof(char);
             historyCommands[curNumCummands] = (char *)malloc(commandLength);
+            // check if the malloc failed. If so, free all allocated memory and perror
+            if (historyCommands[curNumCummands] == NULL) {
+                int l;
+                for (l = 0; l < numTokens - 1; l++) {
+                    free(arguments[l]);
+                }
+                free(arguments);
+                for (l = 0; l < curNumCummands; l++) {
+                    free(historyCommands[l]);
+                }
+                perror("malloc failed");
+            }
             snprintf(historyCommands[curNumCummands], commandLength, "%d %s", getpid(), userString);
             curNumCummands++;
             // if the command is the built in command: "exit", free all memory and return.
@@ -183,9 +211,18 @@ void shellLoop() {
                     */
                     int commandLength = (MAX_PID_CHAR_LENGTH + strlen(userString) + 2)*sizeof(char);
                     historyCommands[curNumCummands] = (char *)malloc(commandLength);
-                    if (historyCommands[curNumCummands == NULL] {
-                        
-                    })
+                    // check if the malloc failed. If so, free all allocated memory and perror
+                    if (historyCommands[curNumCummands] == NULL) {
+                        int l;
+                        for (l = 0; l < numTokens - 1; l++) {
+                            free(arguments[l]);
+                        }
+                        free(arguments);
+                        for (l = 0; l < curNumCummands; l++) {
+                            free(historyCommands[l]);
+                        }
+                        perror("malloc failed");
+                    }
                     //DANIEL ADD MALLOC FREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
                     snprintf(historyCommands[curNumCummands], commandLength, "%d %s", pid, userString);
                     curNumCummands++;
