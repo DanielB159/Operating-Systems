@@ -6,40 +6,36 @@
 #include "sys/wait.h"
 
 #define COMMAND_BUFFER_SIZE 101
-#define COMMAND_PATH_SIZE 1024
+#define COMMAND_PATH_SIZE 4096
 
 char* findLibrary(char *command) {
-    printf("this is the command: %s\n", command);
     // this buffer will hold the path to the command 
-    char *path = (char *)malloc(COMMAND_PATH_SIZE);
-    printf("did this malloc\n");
-    char *whichString = "which";
-    char toRun[6 + COMMAND_BUFFER_SIZE];
-    sprintf(toRun, "%s %s", whichString, command);
-    // executing the command "which command" to get the directory of it, and opening a pipe to read the output
-    FILE* pipe = popen(toRun, "r");
-    if (pipe == NULL) {
-        exit(1);
+    char *path = getenv("PATH");
+    // because strtok changes the string, we will use it on a copy of the PATH variable.
+    char pathCopy[strlen(path) + 1];
+    strcpy(pathCopy, path);
+    char *dir;
+    // stepping over the PATH variable with ":" as the delimiter
+    dir = strtok(pathCopy, ":");
+    while (dir != NULL) {
+        // Construct the full path to the command
+        char *command_path = (char *)malloc(COMMAND_PATH_SIZE*sizeof(char));
+        snprintf(command_path, COMMAND_PATH_SIZE*sizeof(char), "%s/%s", dir, command);
+        // Check if the command exists in this directory using access()
+        if (access(command_path, F_OK) == 0) {
+            return command_path;
+        }
+
+        // Move on to the next directory
+        dir = strtok(NULL, ":");
     }
-    printf("did i get to this line\n");
-    // read the output to the path buffer
-    if (fgets(path, sizeof(char) * COMMAND_PATH_SIZE, pipe) == NULL) {
-        exit(1);
-    }
-    /* 
-    null terminate the newline character at the end of the "path". 
-    strcspn returns the index before the first appearance of "\n"
-    */
-    printf("got to this line too\n");
-    path[strcspn(path, "\n")] = '\0'; 
-    pclose(pipe);
-    return path;
+    // if the path to the command was not found, return NULL
+    return NULL;
 }
 
 
 // This function executes the shell loop of getting input from the user and executing it indefinitely
-void shellLoop(char* dir) {
-    char * test = NULL;
+void shellLoop() {
     char userString[COMMAND_BUFFER_SIZE], userStringCpy[COMMAND_BUFFER_SIZE];
     char command[COMMAND_BUFFER_SIZE];
     while (1) {
@@ -48,9 +44,6 @@ void shellLoop(char* dir) {
         printf("$ ");
         fflush(stdout);
         // getting input from the user with no regards to spaces
-        // DANIEL BEFORE SUBMITION DELETE FGETS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-        // fgets(userSring, COMMAND_BUFFER_SIZE, stdin);
-        //!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         scanf(" %[^\n]%*c", userString);
         // copying the command for second strtok 
         strcpy(userStringCpy, userString);
@@ -79,30 +72,32 @@ void shellLoop(char* dir) {
         }
         // setting the final argument to be NULL
         arguments[i] = NULL;
-        // finding the path to the 
+        // finding the path to the command
         char *pathToDir = findLibrary(command);
-        printf("got here\n");
-        int j;
-        for (j = 0; j <= numTokens; j++) {
-            printf("this is the %d: %s\n", j, arguments[j]);
-        }
-
-
+        
         // forking and executing the command in the child
         int stat;
         int pid = fork();
-        if (!pid) {
-            execv(pathToDir, arguments);
-        } else {
-            wait(&stat);
+        switch (pid) {
+            case -1:
+                perror("fork failed");
+                break;
+            case 0:
+                execv(pathToDir, arguments);
+                break;
+            default:
+                wait(&stat);
         }
-        int k;
+
         // freeing the allocated memory
-        for (k = 0; j < numTokens - 1; j++) {
-            free(arguments[j]);
+        int k;
+        for (k = 0; k < numTokens - 1; k++) {
+            free(arguments[k]);
         }
         free(arguments);
-        free(pathToDir);
+        if (pathToDir) {
+            free(pathToDir);
+        }
     }
 }
 
@@ -111,11 +106,25 @@ void shellLoop(char* dir) {
 
 int main(int argc, char *argv[]) {
     // Check if number of arguments is valid
-    if (argc != 2) {
-        exit(1);
+    if (argc >= 2) {
+        int i;
+        // this for loop adds all of the new enviroment variables to the path
+        for (i = 1; i < argc; i++) {
+            // first, get the current PATH
+            char *old_path = getenv("PATH");
+            // now, find the size of the current "PATH" variable
+            int pathSize = strlen(old_path);
+            // next, find the size of the new enviroment variable
+            int size = strlen(argv[i]);
+            // initialize a new path variable
+            char new_path[size + pathSize + 2];
+            // next, append the new directory to the PATH value
+            snprintf(new_path, sizeof(new_path), "%s:%s", old_path, argv[i]);
+            // Set the modified PATH value back into the environment without overwriting it
+            setenv("PATH", new_path, 1);
+        }
     }
-
-    shellLoop(argv[1]);
+    shellLoop();
     
     return 0;
 }
