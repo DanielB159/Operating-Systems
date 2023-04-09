@@ -99,7 +99,7 @@ void shellLoop() {
         }
         // setting the final argument to be NULL
         arguments[i] = NULL;
-
+        // if the command is the built in command: "history", execute it.
         if (!strcmp(command, "history")) {
             int commandLength = (MAX_PID_CHAR_LENGTH + strlen(userString) + 2)*sizeof(char);
             historyCommands[curNumCummands] = (char *)malloc(commandLength);
@@ -109,17 +109,24 @@ void shellLoop() {
             for (c = 0; c < curNumCummands; c++) {
                 printf("%s\n", historyCommands[c]);
             }
-        } else if (!strcmp(command, "cd")) {
-
-        } else if (!strcmp(command, "exit")) {
+        } else if (!strcmp(command, "cd")) { // if the command is the built in command: "cd", execute it.
+            // cd is implemented using chdir 
+            chdir(arguments[1]);
+            int commandLength = (MAX_PID_CHAR_LENGTH + strlen(userString) + 2)*sizeof(char);
+            historyCommands[curNumCummands] = (char *)malloc(commandLength);
+            snprintf(historyCommands[curNumCummands], commandLength, "%d %s", getpid(), userString);
+            curNumCummands++;
+            // if the command is the built in command: "exit", free all memory and return.
+        } else if (!strcmp(command, "exit")) { 
             int e;
             for (e = 0; e < numTokens - 1; e++) {
                 free(arguments[e]);
             }
-            free(arguments);
+                free(arguments);
             for (e = 0; e < curNumCummands; e++) {
                 free(historyCommands[e]);
             }
+            return;
         } else { // if the command is not a built in function 
             // finding the path to the command
             char *pathToDir = findLibrary(command);
@@ -135,12 +142,6 @@ void shellLoop() {
                 }
                 perror("malloc failed");
             }
-            char localPathToDir[strlen(pathToDir) + 1];
-            strcpy(localPathToDir, pathToDir);
-            // if there was a valid path, free the memory that was allocated
-            if (pathToDir) {
-                free(pathToDir);
-            }
             // forking and executing the command in the child
             int stat;
             int pid = fork();
@@ -155,15 +156,26 @@ void shellLoop() {
                     for (l = 0; l < curNumCummands; l++) {
                         free(historyCommands[l]);
                     }
+                    if (pathToDir) {
+                        free(pathToDir);
+                    }
                     perror("fork failed");
                     break;
                 // if this is the child, execute the program
                 case 0:
-                    execv(localPathToDir, arguments);
+                    // if there really was a path to a command, execute it
+                    if (pathToDir != NULL) {
+                        execv(pathToDir, arguments);
+                    } else { // otherwise, terminate
+                        exit(1);
+                    }
                     break;
                 // otherwise, this is the parent, wait for the child
                 default:
-                    wait(&stat);
+                    //likewise, if there really was a path to the command, wait for the child process to terminate
+                    if (pathToDir != NULL) {
+                        wait(&stat);;
+                    }
                     /*
                     add the executed command to the history of commands. 
                     the size allocted for the PID is the maximum number of characters for a process id, the length of the 
@@ -171,8 +183,16 @@ void shellLoop() {
                     */
                     int commandLength = (MAX_PID_CHAR_LENGTH + strlen(userString) + 2)*sizeof(char);
                     historyCommands[curNumCummands] = (char *)malloc(commandLength);
+                    if (historyCommands[curNumCummands == NULL] {
+                        
+                    })
+                    //DANIEL ADD MALLOC FREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
                     snprintf(historyCommands[curNumCummands], commandLength, "%d %s", pid, userString);
                     curNumCummands++;
+                    // if there was a valid path, free the memory that was allocated
+                    if (pathToDir) {
+                        free(pathToDir);
+                    }
             }
         }
         // freeing the allocated memory for the arguments
@@ -212,7 +232,7 @@ int main(int argc, char *argv[]) {
             setenv("PATH", new_path, 1);
         }
     }
+    // the shellLoop function is the function that runs the loop of the mini-shell
     shellLoop();
-    
     return 0;
 }
