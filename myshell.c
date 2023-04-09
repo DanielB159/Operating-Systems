@@ -223,7 +223,6 @@ void shellLoop() {
                         }
                         perror("malloc failed");
                     }
-                    //DANIEL ADD MALLOC FREEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEE
                     snprintf(historyCommands[curNumCummands], commandLength, "%d %s", pid, userString);
                     curNumCummands++;
                     // if there was a valid path, free the memory that was allocated
