@@ -82,7 +82,8 @@ void shellLoop(char* dir) {
         // finding the path to the 
         char *pathToDir = findLibrary(command);
         printf("got here\n");
-        for (int j = 0; j <= numTokens; j++) {
+        int j;
+        for (j = 0; j <= numTokens; j++) {
             printf("this is the %d: %s\n", j, arguments[j]);
         }
 
@@ -95,9 +96,9 @@ void shellLoop(char* dir) {
         } else {
             wait(&stat);
         }
-
+        int k;
         // freeing the allocated memory
-        for (int j = 0; j < numTokens - 1; j++) {
+        for (k = 0; j < numTokens - 1; j++) {
             free(arguments[j]);
         }
         free(arguments);
