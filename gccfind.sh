@@ -1,4 +1,4 @@
-#bin/bash/!
+#!/bin/bash
 # This program accepts a folder path and compiles all of the files in it
 
 # first, check if there are 2 arguments. If so, work only in the given directory without sub-directories
