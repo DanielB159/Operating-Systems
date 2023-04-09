@@ -175,14 +175,14 @@ void shellLoop() {
             int pid = fork();
             switch (pid) {
                 // if the fork failed
+                int h;
                 case -1:
-                    int l;
-                    for (l = 0; l < numTokens - 1; l++) {
-                        free(arguments[l]);
+                    for (h = 0; h < numTokens - 1; h++) {
+                        free(arguments[h]);
                     }
                     free(arguments);
-                    for (l = 0; l < curNumCummands; l++) {
-                        free(historyCommands[l]);
+                    for (h = 0; h < curNumCummands; h++) {
+                        free(historyCommands[h]);
                     }
                     if (pathToDir) {
                         free(pathToDir);
