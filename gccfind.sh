@@ -6,7 +6,7 @@ if [ $# -eq 2 ]; then
     # first, removing all of the compiled files only in this directory
     rm $1/*.out
     # next, compiling all c files with which have argument2 in them. Limit only to this folder
-    find $1  -maxdepth 1 -name "*.c" -type f -print0 | xargs -0 grep -l -i -z "$2" | xargs -0 sh -c 'for file do gcc -o "${file%.c}".out -w "$file"; done' sh 
+    find $1  -maxdepth 1 -name "*.c" -type f -print0 | xargs -0 grep -l -i --null "$2" | xargs -0 sh -c 'for file do gcc -o "${file%.c}".out -w "$file"; done' sh 
     # the find command finds all the c files in the given directory. It then sends output to the grep
     # the grep command finds all given files that have argument 2 in them. It then send them to the next command
     # the the next command is a for loop executed in a different shell (sh -c), it compiles all the files and outputs compiled files with the respective names
