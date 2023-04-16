@@ -159,7 +159,7 @@ void shellLoop() {
             // if the command is the built in command: "exit", free all memory and return.
         } else if (!strcmp(command, "exit")) { 
             freeArgumentsAndHistory(arguments, historyCommands, numTokens, curNumCummands);
-            exit(0);
+            return;
         } else { // if the command is not a built in function 
             // finding the path to the command
             char *pathToDir = findLibrary(command);
