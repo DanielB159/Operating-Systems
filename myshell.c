@@ -49,12 +49,10 @@ char* findLibrary(char *command) {
 void freeArgumentsAndHistory(char** arguments, char** historyCommands, int numTokens, int curNumCummands) {
     int l;
     for (l = 0; l < numTokens; l++) {
-        printf("now freeing: %s", arguments[l]);
         free(arguments[l]);
     }
     free(arguments);
     for (l = 0; l < curNumCummands; l++) {
-        printf("now freeing: %s", historyCommands[l]);
         free(historyCommands[l]);
     }
 }
