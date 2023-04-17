@@ -36,7 +36,8 @@ char* findLibrary(char *command) {
         if (access(command_path, F_OK) == 0) {
             return command_path;
         }
-
+        // the command does not exist. Free the allocated memory
+        free(command_path);
         // Move on to the next directory
         dir = strtok(NULL, ":");
     }
@@ -47,11 +48,13 @@ char* findLibrary(char *command) {
 // this function frees the arguments saved and the history of commands saved
 void freeArgumentsAndHistory(char** arguments, char** historyCommands, int numTokens, int curNumCummands) {
     int l;
-    for (l = 0; l < numTokens - 1; l++) {
+    for (l = 0; l < numTokens; l++) {
+        printf("now freeing: %s", arguments[l]);
         free(arguments[l]);
     }
     free(arguments);
     for (l = 0; l < curNumCummands; l++) {
+        printf("now freeing: %s", historyCommands[l]);
         free(historyCommands[l]);
     }
 }
@@ -59,7 +62,7 @@ void freeArgumentsAndHistory(char** arguments, char** historyCommands, int numTo
 // this function frees only the arguments saved
 void freeArguments(char** arguments, int numTokens) {
     int h;
-    for (h = 0; h < numTokens - 1; h++) {
+    for (h = 0; h < numTokens; h++) {
         free(arguments[h]);
     }
     free(arguments);
@@ -67,7 +70,6 @@ void freeArguments(char** arguments, int numTokens) {
 
 // This function executes the shell loop of getting input from the user and executing it indefinitely
 void shellLoop() {
-    
     char* historyCommands[MAX_NUM_COMMANDS];
     int curNumCummands = 0;
     while (1) {
@@ -84,7 +86,7 @@ void shellLoop() {
         strcpy(userStringCpy2, userString);
         token1 = strtok(userStringCpy1, delim);
         int numTokens = 0;
-        //this while loop checks first how many arguments there are with the command
+        // this while loop checks first how many arguments there are with the command
         while (token1 != NULL) {
             if (numTokens != 0) {
                 numTokens++;
@@ -191,7 +193,6 @@ void shellLoop() {
                 strcpy(errString, command);
                 strcpy(errString + strlen(errString), " failed");
                 perror(errString);
-
             } else {
                 // forking and executing the command in the child
                 int stat;
