@@ -1,3 +1,4 @@
+//Daniel Boianju 315113159
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -244,11 +245,6 @@ void shellLoop() {
         }
         // freeing the allocated memory for the arguments
         freeArguments(arguments, numTokens);
-    }
-    // freeing the memory allocated for the commands
-    int k;
-    for (k = 0; k < curNumCummands; k++) {
-        free(historyCommands[k]);
     }
 }
 
