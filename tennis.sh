@@ -1,4 +1,5 @@
 #!/bin/bash
+#Daniel Boianju 315113159
 # This program runs a tennis game between two players
 
 # setting up game variables
