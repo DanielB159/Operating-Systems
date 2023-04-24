@@ -1,3 +1,4 @@
+//Daniel Boianju 315113159
 #include "stdio.h"
 #include "stdlib.h"
 #include "string.h"
@@ -49,12 +50,10 @@ char* findLibrary(char *command) {
 void freeArgumentsAndHistory(char** arguments, char** historyCommands, int numTokens, int curNumCummands) {
     int l;
     for (l = 0; l < numTokens; l++) {
-        printf("now freeing: %s", arguments[l]);
         free(arguments[l]);
     }
     free(arguments);
     for (l = 0; l < curNumCummands; l++) {
-        printf("now freeing: %s", historyCommands[l]);
         free(historyCommands[l]);
     }
 }
@@ -161,7 +160,7 @@ void shellLoop() {
             // if the command is the built in command: "exit", free all memory and return.
         } else if (!strcmp(command, "exit")) { 
             freeArgumentsAndHistory(arguments, historyCommands, numTokens, curNumCummands);
-            return;
+            exit(1);
         } else { // if the command is not a built in function 
             // finding the path to the command
             char *pathToDir = findLibrary(command);
@@ -246,11 +245,6 @@ void shellLoop() {
         }
         // freeing the allocated memory for the arguments
         freeArguments(arguments, numTokens);
-    }
-    // freeing the memory allocated for the commands
-    int k;
-    for (k = 0; k < curNumCummands; k++) {
-        free(historyCommands[k]);
     }
 }
 
