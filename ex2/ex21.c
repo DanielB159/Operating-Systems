@@ -11,20 +11,6 @@
 #define STD_OUTPUT 1
 #define CASE_DIFFERENCE 32
 
-// this function preforms bubble sort on the char array
-void bubbleSort(char* arr, int size) {
-    int i, j;
-    for (i = 0; i < size - 1; i++) {
-        for (j = 0; j < size - 1; j++) {
-            if (arr[j] <= arr[j + 1]) {
-                char temp = arr[j + 1];
-                arr[j + 1] = arr[j];
-                arr[j] = temp;
-            }
-        }
-    }
-}
-
 /*
 this function copies the file, without ' ' or '\n' to the arr, assuming it has enough space.
 The copying is done case insensitive. 
@@ -128,9 +114,7 @@ int areSimilar(int fd1, int fd2) {
         exit(-1);
     }
     
-    // sort the buffers without the last character (will be reserved for '\0')
-    bubbleSort(firstFile, size1 - 1);
-    bubbleSort(secondFile, size2 - 1);
+    // configure the last character to be null terminator
     firstFile[size1 - 1] = '\0';
     firstFile[size1 - 1] = '\0';
 
