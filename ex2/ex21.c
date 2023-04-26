@@ -159,10 +159,12 @@ int areIdentical(int fd1, int fd2) {
 }
 
 int main(int argc, char *argv[]) {
+    
     // first, make sure that indeed got 2 arguments in addition to a.out
     if (argc != 3) {
-        exit(1);
+        exit(-1);
     }
+    printf("now checking files: %s and %s...\n", argv[1], argv[2]);
     // now, check that the paths indeed exist
     if (!(access(argv[1], F_OK) == 0) || !(access(argv[2], F_OK) == 0)) {
         if (write(STD_OUTPUT, "Error in: access\n", 18) == -1) {
@@ -181,6 +183,7 @@ int main(int argc, char *argv[]) {
 
     // first, check if the files are identical
     if (areIdentical(fd1, fd2)) {
+        puts("returning 1");
         return 1;
     }
 
@@ -195,11 +198,13 @@ int main(int argc, char *argv[]) {
     }
 
     if (areSimilar(fd1, fd2)) {
+        puts("returning 3");
         return 3;
     }
 
     // closing the opened files
     close(fd1);
     close(fd2);
+    puts("returning 2");
     return 2; 
 }

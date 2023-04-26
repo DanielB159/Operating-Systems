@@ -1,6 +1,2 @@
-12
-2                     BA
-3
-
-
-   5
+Please enter two numbers
+10

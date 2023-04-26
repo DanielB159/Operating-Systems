@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 int main() {
-    printf("This is not the correct output!\n");
+    printf("b\n");
 	return 0;
 }
+//This is not the correct output!

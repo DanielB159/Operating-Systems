@@ -1,11 +1,2 @@
-12
-bA2
-3
-
-
-
-
-
-
-
-   5
+Please enter two numbers
+10
