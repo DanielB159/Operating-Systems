@@ -150,7 +150,7 @@ int writeToResults(int resultsFd, char *studentName, char *grade, char *reason) 
     char lineToWrite[size];
     snprintf(lineToWrite, size, "%s,%s,%s\n", studentName, grade, reason);
     // write the grade to the results file
-    if (write(resultsFd, lineToWrite, size + 1) == -1) {
+    if (write(resultsFd, lineToWrite, strlen(lineToWrite)) == -1) {
         return -1;
     }
     return 1;
@@ -189,8 +189,8 @@ int compileCFile(char *pathToCFile, char *pathToFileDirectory) {
             return -2;
         case 0: //child process
             execvp("gcc", arguments);
-            puts("exec of gcc failed");
-            exit(-1);
+            // puts("exec of gcc failed");
+            // exit(-1);
         default: //parent process
             wait(&stat);
     }
@@ -213,30 +213,13 @@ It returns 1 if the output was read and saved accordingly to a file, 2 on timeou
 It returns 0 on pipe() error, -1 on opening a new file error, -2 on write error, -3 on fork error
 -4 on read error, -5 on waitpid error;
 */
-int runFileSaveOutput(char *pathToExecutable, int inputFilefd) {
-    // fd will be the input & output channels to the child process. 
-    // int fd[2];
-    // outputTemp will be the file that we will redirect the output to
-    int outputTempFd = open("outputTemp.txt",  O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
-    if (outputTempFd == -1) {
-        return -1;
-    }
-    printf("\nnow will run %s\n\n\n", pathToExecutable);
-    // char output[MAX_IO_LENGTH];
-    // open a new pipe for communication
-    // if (pipe(fd) < 0) {
-    //     return 0;
-    // }
+int runFileSaveOutput(char *pathToExecutable, int inputFilefd, int outputTempFd) {
     int pid;
     if ((pid = fork()) < 0) {
-        close(outputTempFd);
-        // close(fd[0]);
-        // close(fd[1]);
         return -3;
     } else if (pid == 0) { // Child process
         // redirect stdin to the read input from the input file
         dup2(inputFilefd, STDIN_FILENO);
-
         // redirect stdout to write output to the output file
         dup2(outputTempFd, STDOUT_FILENO);
         char* arguments[2] = {pathToExecutable, NULL};
@@ -247,91 +230,14 @@ int runFileSaveOutput(char *pathToExecutable, int inputFilefd) {
         execvp(pathToExecutable, arguments);
         exit(-1);
     } else { // Parent process
-
         int status;
         wait(&status);
         if (WIFEXITED(status)) { // Child process terminated normally
-            close(outputTempFd);
             return 1;
         } else if (WIFSIGNALED(status)) {
             // Child process was terminated by a signal
-            close(outputTempFd);
             return 2;
         }
-
-    //     int statusIfEnded, statusIfWaiting;
-    //     // first, check if the child process has exited already
-    //     sleep(1);
-    //     pid_t result =  waitpid(pid, &statusIfEnded, WNOHANG);
-    //     if (result == -1) { // if the waitpid command failed
-    //         close(outputTempFd);
-    //         close(fd[0]);
-    //         close(fd[1]);
-    //         return -5;
-    //     } else if (result == 0) { // if the child process has not exited yet
-    //         puts("the child process has not exited. writing input");
-    //         // Write the input to the end of the file
-    //         if (write(fd[1], inputLine, strlen(inputLine)) == -1) {
-    //             close(outputTempFd);
-    //             close(fd[0]);
-    //             close(fd[1]);
-    //             return -2;
-    //         }
-    //         // Wait for the child process to terminate
-    //         waitpid(pid, &statusIfWaiting, 0);
-    //         // check if the child process was terminated naturally or by signal
-    //         if (WIFEXITED(statusIfWaiting)) { // Child process terminated normally
-    //             // Read the output from the read end of the pipe
-    //             if (read(fd[0], output, MAX_IO_LENGTH) == -1) {
-    //                 close(outputTempFd);
-    //                 close(fd[0]);
-    //                 close(fd[1]);
-    //                 return -4;
-    //             }
-    //             printf("the output is: \n%s", output);
-    //             if (write(outputTempFd, output, strlen(output)) == -1) {
-    //                 return -2;
-    //             }
-    //             close(outputTempFd);
-    //             close(fd[0]);
-    //             close(fd[1]);
-    //             return 1;
-    //         } else if (WIFSIGNALED(statusIfWaiting)) {
-    //             // Child process was terminated by a signal
-    //             close(outputTempFd);
-    //             close(fd[0]);
-    //             close(fd[1]);
-    //             return 2;
-    //         }
-    //     } else { // thi child process ended with no input
-    //         puts("the child process ended with not input required");
-    //         if (WIFEXITED(statusIfEnded)) { // Child process terminated normally
-    //             // Read the output from the read end of the pipe
-    //             if (read(fd[0], output, MAX_IO_LENGTH) == -1) {
-    //                 close(outputTempFd);
-    //                 close(fd[0]);
-    //                 close(fd[1]);
-    //                 return -4;
-    //             }
-    //             printf("the output is: \n%s", output);
-    //             if (write(outputTempFd, output, strlen(output)) == -1) {
-    //                 return -2;
-    //             }
-    //             close(outputTempFd);
-    //             close(fd[0]);
-    //             close(fd[1]);
-    //             return 1;
-    //         } else if (WIFSIGNALED(statusIfEnded)) {
-    //             // Child process was terminated by a signal
-    //             close(outputTempFd);
-    //             close(fd[0]);
-    //             close(fd[1]);
-    //             return 2;
-    //         }
-    //     }
-    
-        
-        
     }
 }
 
@@ -372,12 +278,6 @@ int main(int argc, char* argv[]) {
     if (inputFilefd == -1) {
         closeConfiguration(confiFd, "read");
     }
-    char actualInput[MAX_IO_LENGTH];
-    if (readLineFromFile(inputFilefd, actualInput) == -1) {
-        close(inputFilefd);
-        closeConfiguration(confiFd, "read");
-    }
-    close(inputFilefd);
 
     // open a file to direct error output to errors.txt 
     int errorFd = open("errors.txt", O_WRONLY | O_CREAT | O_APPEND | O_TRUNC, S_IRWXU);
@@ -393,9 +293,8 @@ int main(int argc, char* argv[]) {
     if (resultsFd == -1) {
         closeConfiguration(confiFd, "open");
     }
-    DIR *studentFolder = opendir(studentFolderLine); 
+    DIR *studentFolder = opendir(studentFolderLine);
     struct dirent *dirEntity;
-    printf("the current pid is: %d\n", getpid());
     while ((dirEntity = readdir(studentFolder)) != NULL) {
         // if the entity is not a special saved folder
         if (strcmp(dirEntity->d_name, ".") && strcmp(dirEntity->d_name, "..")) {
@@ -446,14 +345,27 @@ int main(int argc, char* argv[]) {
                             }
                             break;
                         default:
+                            int outputTempFd = open("outputTemp.txt",  O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
+                            if (outputTempFd == -1) {
+                                closeConfiResStudErr(confiFd, resultsFd, studentFolder, errorFd, "open");
+                                break;
+                            }
                             // define the path to the executable
                             int sizeExe = strlen(path) + 8;
                             char pathToExe[sizeExe];
                             // define the path to the C file
                             snprintf(pathToExe, sizeC, "%s/%s", path, "a.out");
                             // now, run the executable with the given input
-                            int runStatus = runFileSaveOutput(pathToExe, inputFilefd);
-                            exit(-1);
+                            lseek(inputFilefd, 0, SEEK_SET);
+                            if (!(!(lseek(inputFilefd, 0, SEEK_SET) == -1) && !(lseek(inputFilefd, 0, SEEK_SET) == -1))) {
+                                if (write(STD_OUTPUT, "Error in: lseek\n", 16) == -1) {
+                                    close(inputFilefd);
+                                    closeConfiResStudErr(confiFd, resultsFd, studentFolder, errorFd, "pipe");
+                                    exit(-1);
+                                }
+                                exit(-1);
+                            }
+                            int runStatus = runFileSaveOutput(pathToExe, inputFilefd, outputTempFd);
                             switch (runStatus) {
                                 case 0:
                                     closeConfiResStudErr(confiFd, resultsFd, studentFolder, errorFd, "pipe");
@@ -494,13 +406,6 @@ int main(int argc, char* argv[]) {
                                         default: //parent process
                                             wait(&status);
                                             int exit_status = WEXITSTATUS(status);
-                                            printf("for the file %s the comparison is %d and the process is %d\n", path, exit_status, getpid());
-                                            // if (!strcmp(path, "students/Excellent_gets_100")) {
-                                            //     system("cat outputTemp.txt");
-                                            //     exit(-1);
-                                            // }
-                                            puts("the cat is:");
-                                            system("cat outputTemp.txt");
                                             switch (exit_status){
                                                 case -1:
                                                     closeConfiResStudErr(confiFd, resultsFd, studentFolder, errorFd, "comp.out");
@@ -527,6 +432,7 @@ int main(int argc, char* argv[]) {
                                             }
                                             
                                     }
+                                close(outputTempFd);
                                 remove("outputTemp.txt");
                             }
                     }
