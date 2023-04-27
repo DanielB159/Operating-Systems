@@ -209,37 +209,36 @@ void timeout_handler() {
 /*
 This function runs the executable with the given argument line. It does so by opening
 a pipe for writing input and reading output, and saving a file with the output.
-It returns 1 if the output was read and saved accordingly to a file.
+It returns 1 if the output was read and saved accordingly to a file, 2 on timeout
 It returns 0 on pipe() error, -1 on opening a new file error, -2 on write error, -3 on fork error
--4 on read error.
+-4 on read error, -5 on waitpid error;
 */
-int runFileSaveOutput(char *pathToExecutable, char *inputLine) {
+int runFileSaveOutput(char *pathToExecutable, int inputFilefd) {
     // fd will be the input & output channels to the child process. 
-    int fd[2];
+    // int fd[2];
     // outputTemp will be the file that we will redirect the output to
     int outputTempFd = open("outputTemp.txt",  O_RDWR | O_CREAT | O_TRUNC, S_IRWXU);
     if (outputTempFd == -1) {
         return -1;
     }
-    printf("\nnow will run %s with input %s\n\n\n", pathToExecutable, inputLine);
-    char output[MAX_IO_LENGTH];
+    printf("\nnow will run %s\n\n\n", pathToExecutable);
+    // char output[MAX_IO_LENGTH];
     // open a new pipe for communication
-    if (pipe(fd) < 0) {
-        return 0;
-    }
-    int status;
+    // if (pipe(fd) < 0) {
+    //     return 0;
+    // }
     int pid;
     if ((pid = fork()) < 0) {
         close(outputTempFd);
-        close(fd[0]);
-        close(fd[1]);
+        // close(fd[0]);
+        // close(fd[1]);
         return -3;
     } else if (pid == 0) { // Child process
-        // redirect stdin to the read end of the pipe
-        dup2(fd[0], STDIN_FILENO);
+        // redirect stdin to the read input from the input file
+        dup2(inputFilefd, STDIN_FILENO);
 
-        // redirect stdout to the write end of the pipe
-        dup2(fd[1], STDOUT_FILENO);
+        // redirect stdout to write output to the output file
+        dup2(outputTempFd, STDOUT_FILENO);
         char* arguments[2] = {pathToExecutable, NULL};
         // Set the timeout to 5seconds
         signal(SIGALRM, timeout_handler);
@@ -248,40 +247,91 @@ int runFileSaveOutput(char *pathToExecutable, char *inputLine) {
         execvp(pathToExecutable, arguments);
         exit(-1);
     } else { // Parent process
-        // Write the input to the end of the file
-        if (write(fd[1], inputLine, strlen(inputLine)) == -1) {
-            close(outputTempFd);
-            close(fd[0]);
-            close(fd[1]);
-            return -2;
-        }
-        // Wait for the child process to terminate
-        waitpid(pid, &status, 0);
 
-        // check if the child process was terminated naturally or by signal
+        int status;
+        wait(&status);
         if (WIFEXITED(status)) { // Child process terminated normally
-            // Read the output from the read end of the pipe
-            if (read(fd[0], output, MAX_IO_LENGTH) == -1) {
-                close(outputTempFd);
-                close(fd[0]);
-                close(fd[1]);
-                return -4;
-            }
-            printf("the output is: \n%s", output);
-            if (write(outputTempFd, output, strlen(output)) == -1) {
-                return -2;
-            }
             close(outputTempFd);
-            close(fd[0]);
-            close(fd[1]);
             return 1;
         } else if (WIFSIGNALED(status)) {
             // Child process was terminated by a signal
             close(outputTempFd);
-            close(fd[0]);
-            close(fd[1]);
             return 2;
         }
+
+    //     int statusIfEnded, statusIfWaiting;
+    //     // first, check if the child process has exited already
+    //     sleep(1);
+    //     pid_t result =  waitpid(pid, &statusIfEnded, WNOHANG);
+    //     if (result == -1) { // if the waitpid command failed
+    //         close(outputTempFd);
+    //         close(fd[0]);
+    //         close(fd[1]);
+    //         return -5;
+    //     } else if (result == 0) { // if the child process has not exited yet
+    //         puts("the child process has not exited. writing input");
+    //         // Write the input to the end of the file
+    //         if (write(fd[1], inputLine, strlen(inputLine)) == -1) {
+    //             close(outputTempFd);
+    //             close(fd[0]);
+    //             close(fd[1]);
+    //             return -2;
+    //         }
+    //         // Wait for the child process to terminate
+    //         waitpid(pid, &statusIfWaiting, 0);
+    //         // check if the child process was terminated naturally or by signal
+    //         if (WIFEXITED(statusIfWaiting)) { // Child process terminated normally
+    //             // Read the output from the read end of the pipe
+    //             if (read(fd[0], output, MAX_IO_LENGTH) == -1) {
+    //                 close(outputTempFd);
+    //                 close(fd[0]);
+    //                 close(fd[1]);
+    //                 return -4;
+    //             }
+    //             printf("the output is: \n%s", output);
+    //             if (write(outputTempFd, output, strlen(output)) == -1) {
+    //                 return -2;
+    //             }
+    //             close(outputTempFd);
+    //             close(fd[0]);
+    //             close(fd[1]);
+    //             return 1;
+    //         } else if (WIFSIGNALED(statusIfWaiting)) {
+    //             // Child process was terminated by a signal
+    //             close(outputTempFd);
+    //             close(fd[0]);
+    //             close(fd[1]);
+    //             return 2;
+    //         }
+    //     } else { // thi child process ended with no input
+    //         puts("the child process ended with not input required");
+    //         if (WIFEXITED(statusIfEnded)) { // Child process terminated normally
+    //             // Read the output from the read end of the pipe
+    //             if (read(fd[0], output, MAX_IO_LENGTH) == -1) {
+    //                 close(outputTempFd);
+    //                 close(fd[0]);
+    //                 close(fd[1]);
+    //                 return -4;
+    //             }
+    //             printf("the output is: \n%s", output);
+    //             if (write(outputTempFd, output, strlen(output)) == -1) {
+    //                 return -2;
+    //             }
+    //             close(outputTempFd);
+    //             close(fd[0]);
+    //             close(fd[1]);
+    //             return 1;
+    //         } else if (WIFSIGNALED(statusIfEnded)) {
+    //             // Child process was terminated by a signal
+    //             close(outputTempFd);
+    //             close(fd[0]);
+    //             close(fd[1]);
+    //             return 2;
+    //         }
+    //     }
+    
+        
+        
     }
 }
 
@@ -402,7 +452,8 @@ int main(int argc, char* argv[]) {
                             // define the path to the C file
                             snprintf(pathToExe, sizeC, "%s/%s", path, "a.out");
                             // now, run the executable with the given input
-                            int runStatus = runFileSaveOutput(pathToExe, actualInput);
+                            int runStatus = runFileSaveOutput(pathToExe, inputFilefd);
+                            exit(-1);
                             switch (runStatus) {
                                 case 0:
                                     closeConfiResStudErr(confiFd, resultsFd, studentFolder, errorFd, "pipe");
