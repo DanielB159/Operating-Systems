@@ -4,8 +4,11 @@
 
 # first, check if there are 2 arguments. If so, work only in the given directory without sub-directories
 if [ $# -eq 2 ]; then
-    # first, removing all of the compiled files only in this directory
-    rm $1/*.out
+    # first, removing all of the compiled files only in this directory, if there are any
+    if ls $1/*.out > /dev/null 2>&1; then
+      echo got here
+      rm $1/*.out
+    fi
     # next, compiling all c files with which have argument2 in them. Limit only to this folder
     find $1  -maxdepth 1 -name "*.c" -type f -print0 | xargs -0 grep -l -i --null "\b$2[^a-z]*\b" | xargs -0 sh -c 'for file do gcc -o "${file%.c}".out -w "$file"; done' sh 
     # the find command finds all the c files in the given directory. It then sends output to the grep
