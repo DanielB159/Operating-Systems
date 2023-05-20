@@ -89,6 +89,7 @@ function read_valid_first_player {
     FIRST_PLAYER_INPUT=false
     while [ "$FIRST_PLAYER_INPUT" = false ]
     do
+        echo "PLAYER 1 PICK A NUMBER: "
         read -s FIRST_VAR
         # first, make sure that the read number is a positive integer
         if ! [[ $FIRST_VAR =~ ^[0-9]+$ ]]; then
@@ -110,6 +111,7 @@ function read_valid_second_player {
     SECOND_PLAYER_INPUT=false
     while [ "$SECOND_PLAYER_INPUT" = false ]
     do
+        echo "PLAYER 2 PICK A NUMBER: "
         read -s SECOND_VAR
         # first, make sure that the read number is a positive integer
         if ! [[ $SECOND_VAR =~ ^[0-9]+$ ]]; then
@@ -181,9 +183,7 @@ function check_if_ended {
 print_curr_board
 while [ "$GAME_ON" = true ]
 do
-    echo "PLAYER 1 PICK A NUMBER: "
     read_valid_first_player
-    echo "PLAYER 2 PICK A NUMBER: "
     read_valid_second_player
     # decrease each player with the points they chose
     FIRST_PLAYER_PTS=$(($FIRST_PLAYER_PTS - $FIRST_VAR))

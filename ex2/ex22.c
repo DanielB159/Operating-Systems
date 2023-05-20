@@ -10,18 +10,14 @@
 #include <dirent.h>
 #include <signal.h>
 
-#define STD_OUTPUT 1
 #define MAX_LINE_LENGTH_CONFIGURATION 150
 #define MAX_C_FILE_PATH_LENGTH 150
-#define LENGTH_OF_FIND_COMMAND 38
-#define C_FILE_NAMES 100
 #define NUM_ARGS_GCC 5
-#define MAX_IO_LENGTH 1024
 
 
 // close the configuration fd and exit with custom error message.
 void closeConfigurationCustom(int confiFd, char* errorMessage) {
-    if (write(STD_OUTPUT, errorMessage, strlen(errorMessage)) == -1) {
+    if (write(STDOUT_FILENO, errorMessage, strlen(errorMessage)) == -1) {
             close(confiFd);
             exit(-1);
         }
@@ -35,7 +31,7 @@ void closeConfiguration(int confiFd, char* functionError) {
     char message[size];
     // build the error message
     snprintf(message, size, "Error in: %s\n", functionError);
-    if (write(STD_OUTPUT, message, size) == -1) {
+    if (write(STDOUT_FILENO, message, size) == -1) {
             close(confiFd);
             exit(-1);
         }
@@ -49,7 +45,7 @@ void closeConfiResStudErr(int confiFd, int resultsFd, DIR *studentFolder, int er
     char message[size];
     // build the error message
     snprintf(message, size, "Error in: %s\n", functionError);
-    if (write(STD_OUTPUT, message, size) == -1) {
+    if (write(STDOUT_FILENO, message, size) == -1) {
         close(confiFd);
         closedir(studentFolder);
         close(resultsFd);
@@ -90,7 +86,7 @@ int isDir(char* dirEntpath) {
 /*
 This function returns 1 if the given directory has a .c file. 0 otherwise.
 if C file has been found, write it's name to the buffer
-returns -1 on opendir faliure.
+returns -1 on opendir faliure, -2 on stat faliure.
 */
 int findCFile(char *directory, char *buffer) {
     DIR *dir = opendir(directory);
@@ -101,7 +97,15 @@ int findCFile(char *directory, char *buffer) {
     // loop over al entities in directory and check if there is a .c file present
     while ((dirEntity = readdir(dir)) != NULL) {
         int length = strlen(dirEntity->d_name);
-        if (length >= 2 && dirEntity->d_name[length - 1] == 'c' && dirEntity->d_name[length - 2] == '.') {
+        char pathToEntity[strlen(directory) + length + 2];
+        // make sure that the entity is not a directory
+        snprintf(pathToEntity, sizeof(pathToEntity), "%s/%s", directory, dirEntity->d_name);
+        int condition = !isDir(pathToEntity);
+        if (condition == -1) {
+            return -2;
+        }
+        // if the entity is a .c file and not a directory
+        if (length >= 2 && dirEntity->d_name[length - 1] == 'c' && dirEntity->d_name[length - 2] == '.' && condition) {
             strcpy(buffer, dirEntity->d_name);
             closedir(dir);
             return 1;
@@ -186,13 +190,21 @@ int compileCFile(char *pathToCFile, char *pathToFileDirectory) {
     int pid = fork();
     switch(pid) {
         case -1: // fork error
+            int i;
+            //freeing the memory and exiting
+            for (i = 0; i < 4; i++) {
+                free(arguments[i]);
+            }
+            free(arguments);
             return -2;
         case 0: //child process
             execvp("gcc", arguments);
-            // puts("exec of gcc failed");
-            // exit(-1);
         default: //parent process
             wait(&stat);
+            for (i = 0; i < 4; i++) {
+                free(arguments[i]);
+            }
+            free(arguments);
     }
     // if the exit status was 0, the compilation was a success. Otherwise, there was a compilation error
     if (!stat) {
@@ -249,7 +261,7 @@ int main(int argc, char* argv[]) {
     // open the configuration file for reading and check for error in opening
     int confiFd = open(argv[1], O_RDONLY);
     if (confiFd == -1) {
-        if (write(STD_OUTPUT, "Error in: open\n", 16) == -1) {
+        if (write(STDOUT_FILENO, "Error in: open\n", 16) == -1) {
             exit(-1);
         }
         exit(-1);
@@ -314,6 +326,8 @@ int main(int argc, char* argv[]) {
                 int cFileStatus = findCFile(path, cFileName);
                 if (cFileStatus == -1) {
                     closeConfiResStudErr(confiFd, resultsFd, studentFolder, errorFd, "opendir");
+                } else if (cFileStatus == -2) {
+                  closeConfiResStudErr(confiFd, resultsFd, studentFolder, errorFd, "stat");
                 } else if (cFileStatus == 0) {
                     if (writeToResults(resultsFd, dirEntity->d_name, "0", "NO_C_FILE") == -1) {
                         // close all opened resources and exit without writing 
@@ -358,7 +372,7 @@ int main(int argc, char* argv[]) {
                             // now, run the executable with the given input
                             lseek(inputFilefd, 0, SEEK_SET);
                             if (!(!(lseek(inputFilefd, 0, SEEK_SET) == -1) && !(lseek(inputFilefd, 0, SEEK_SET) == -1))) {
-                                if (write(STD_OUTPUT, "Error in: lseek\n", 16) == -1) {
+                                if (write(STDOUT_FILENO, "Error in: lseek\n", 16) == -1) {
                                     close(inputFilefd);
                                     closeConfiResStudErr(confiFd, resultsFd, studentFolder, errorFd, "pipe");
                                     exit(-1);
@@ -431,9 +445,10 @@ int main(int argc, char* argv[]) {
                                                 default:
                                             }
                                             
+                                    close(outputTempFd);
+                                    remove("outputTemp.txt");
                                     }
-                                close(outputTempFd);
-                                remove("outputTemp.txt");
+                                
                             }
                     }
                 }
