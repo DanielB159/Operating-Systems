@@ -1,5 +1,8 @@
 #include "Producer.h"
 
+#include <pthread.h>
+#include <unistd.h>
+
 // define the options for articles 
 const char* options[] = {"SPORTS", "NEWS", "WEATHER"};
 
@@ -10,13 +13,13 @@ void * produceArticles(void *inp) {
     int numProducer = inputs->numProducer;
     int numArticles = inputs->numArticles;
     BoundedQueue *q = inputs->q;
-    printf("the number of the producer is %d and the numbetr of Articles is %d", numProducer, numArticles);
 
     // initalize counters for articles and random seed
     int numNews = 0, numSports = 0, numWeather = 0;
     srand(time(NULL));
     // make numArticles articles and add enququq each one
     for (int i = 0; i < numArticles; i++) {
+        sleep(3);
         int randIndex = rand() % 3;
         int *numToIncrement;
         // select the correct number to increment
@@ -42,6 +45,12 @@ void * produceArticles(void *inp) {
         sprintf(article, "Producer %d %s %d", numProducer, options[randIndex], *numToIncrement);
         printf("producer %d now inserting: %s into queue...\n", numProducer, article);
         enqueueBounded(q, article);
+
+        printf("now the current queue is this and the tid is: %ld\n", pthread_self());
+        for (int j = 0; j <= i; j++) {
+            printf("%s\n", q->arr[j]);
+        }
+
         // incrementing the correct counter
         *numToIncrement = *numToIncrement + 1;
     }
