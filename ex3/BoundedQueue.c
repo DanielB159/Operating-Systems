@@ -43,10 +43,10 @@ BoundedQueue* createBoundedQueue(int size, sem_t *mutex, sem_t *full, sem_t *emp
     if (!q) {
         return NULL;
     }
-    // initilize the semaphores with the appropriate sizes
-    sem_init(mutex, 0, 1);
-    sem_init(full, 0, 0);
-    sem_init(empty, 0, size);
+    // // initilize the semaphores with the appropriate sizes
+    // sem_init(mutex, 0, 1);
+    // sem_init(full, 0, 0);
+    // sem_init(empty, 0, size);
     // set up the parameters for q
     q->size = size;
     q->arr = (char **)malloc(size*sizeof(char *));
