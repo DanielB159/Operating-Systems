@@ -19,7 +19,7 @@ void * produceArticles(void *inp) {
     srand(time(NULL));
     // make numArticles articles and add enququq each one
     for (int i = 0; i < numArticles; i++) {
-        sleep(3);
+        sleep(1);
         int randIndex = rand() % 3;
         int *numToIncrement;
         // select the correct number to increment
@@ -43,13 +43,13 @@ void * produceArticles(void *inp) {
         }
         // define the new article and enqueue it
         sprintf(article, "Producer %d %s %d", numProducer, options[randIndex], *numToIncrement);
-        printf("producer %d now inserting: %s into queue...\n", numProducer, article);
+        // printf("producer %d now inserting: %s into queue...\n", numProducer, article);
         enqueueBounded(q, article);
 
-        printf("now the current queue is this and the tid is: %ld\n", pthread_self());
-        for (int j = 0; j <= i; j++) {
-            printf("%s\n", q->arr[j]);
-        }
+        // printf("now the current queue is this and the tid is: %ld\n", pthread_self());
+        // for (int j = 0; j <= i; j++) {
+        //     printf("%s\n", q->arr[j]);
+        // }
 
         // incrementing the correct counter
         *numToIncrement = *numToIncrement + 1;

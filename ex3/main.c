@@ -39,8 +39,8 @@ sem_t second_empty;
 
 
 int main() {
-    int numOfProds = 2;
-    int sizeOfEachQueue = 10;
+    int numOfProds = 5;
+    int sizeOfEachQueue = 3;
     int numOfArticlesInEachQueue = 5;
     int i;
     // this will be the array of the BoundedQueues
@@ -84,30 +84,46 @@ int main() {
     }
     pthread_attr_init(&managerAttr);
 
-    ProducerInputs inp;
+    // setting up the inputs for each producer
+    ProducerInputs *inputs[numOfProds];
+    
+    for (i = 0; i < numOfProds; i++) {
+        producerQueueArr[i] = createBoundedQueue(sizeOfEachQueue, &mutex_arr[i], &full_arr[i], &empty_arr[i]);
+        inputs[i] = (ProducerInputs *)malloc(sizeof(ProducerInputs));
+        if (inputs[i] == NULL) {
+            exit(1);
+        }
+        // setting up the input
+        inputs[i]->numArticles = numOfArticlesInEachQueue;
+        inputs[i]->numProducer = i;
+        inputs[i]->q = producerQueueArr[i];
+    }
+
     // set the producers to produce their articles 
     for (i = 0; i < numOfProds; i++) {
-        printf("i is now: %d\n", i);
-        producerQueueArr[i] = createBoundedQueue(sizeOfEachQueue, &mutex_arr[i], &full_arr[i], &empty_arr[i]);
-        inp.numArticles = numOfArticlesInEachQueue;
-        inp.numProducer = i;
-        inp.q = producerQueueArr[i];
         // ProducerInputs inp = {i, numOfArticlesInEachQueue, producerQueueArr[i]};
-        printf("inp is: %d, %d, %p\n", inp.numProducer, inp.numArticles, inp.q);
-        pthread_create(&producers[i], &producerAttrs[i], produceArticles, (void *)&inp);
+        printf("inp is: %d, %d, %p\n", inputs[i]->numProducer, inputs[i]->numArticles, inputs[i]->q);
+        pthread_create(&producers[i], &producerAttrs[i], produceArticles, (void *)inputs[i]);
     }
 
     // for (i = 0; i < numOfProds; i++) {
+    //     printf("producer %d:\n", i);
     //     for (int j = 0; j < numOfArticlesInEachQueue; j++) {
     //         char *x = dequeueBounded(producerQueueArr[i]);
     //         printf("%s\n", x);
     //     }
     // }
 
+    // waiting to join the threads
     for (i = 0; i < numOfProds; i++) {
         pthread_join(producers[i], NULL);
     }
 
+    // freeing all allocated memory
+    for (i = 0; i < numOfProds; i++) {
+        free(inputs[i]);
+        producerQueueArr[i]->arr;
+    }
 
     free(producers);
     free(producerAttrs);
