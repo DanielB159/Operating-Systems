@@ -1,7 +1,7 @@
 #include "Producer.h"
 
-#include <pthread.h>
-#include <unistd.h>
+// #include <pthread.h>
+// #include <unistd.h>
 
 // define the options for articles 
 const char* options[] = {"SPORTS", "NEWS", "WEATHER"};
@@ -19,7 +19,6 @@ void * produceArticles(void *inp) {
     srand(time(NULL));
     // make numArticles articles and add enququq each one
     for (int i = 0; i < numArticles; i++) {
-        sleep(1);
         int randIndex = rand() % 3;
         int *numToIncrement;
         // select the correct number to increment
@@ -54,6 +53,8 @@ void * produceArticles(void *inp) {
         // incrementing the correct counter
         *numToIncrement = *numToIncrement + 1;
     }
+    // indicate that done making aricles
+    enqueueBounded(q, "DONE");
     return NULL;
 
 }

@@ -6,7 +6,7 @@
 #include <time.h>
 #include <stdlib.h>
 
-#define MAX_PRODUCER_STRINGLEN 50
+#define MAX_PRODUCER_STRINGLEN 100
 
 // this struct is the input to the function producerArticles
 typedef struct {
