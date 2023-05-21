@@ -1,6 +1,6 @@
 #include <pthread.h>
 #include "BoundedQueue.h"
-// #include "UnboundedQueue.h"
+#include "UnboundedQueue.h"
 #include "Producer.h"
 #include "Dispatcher.h"
 
@@ -19,17 +19,17 @@ sem_t *mutex_arr;
 sem_t *full_arr;
 sem_t *empty_arr;
 
-
-
-
+sem_t *mutex_coed_arr;
+sem_t *full_coed_arr;
 
 int main() {
     int numOfProds = 5;
     int sizeOfEachQueue = 10;
     int numOfArticlesInEachQueue = 5;
     int i;
-    // this will be the array of the BoundedQueues
+    // initizlize Bounded and Unbounded Queues
     BoundedQueue *producerQueueArr[numOfProds];
+    UnboundedQueue *coEditorQueueArr[NUM_CO_EDITORS];
 
     // allocate room for threads
     producers = (pthread_t *)malloc(numOfProds*sizeof(pthread_t));
@@ -39,6 +39,9 @@ int main() {
     mutex_arr = (sem_t *)malloc(numOfProds*sizeof(sem_t));
     full_arr = (sem_t *)malloc(numOfProds*sizeof(sem_t));
     empty_arr = (sem_t *)malloc(numOfProds*sizeof(sem_t));
+
+    mutex_coed_arr = (sem_t *)malloc(NUM_CO_EDITORS*sizeof(sem_t));
+    full_coed_arr = (sem_t *)malloc(NUM_CO_EDITORS*sizeof(sem_t));
     
     // initialize all of the thread attributes
     for (i = 0; i < numOfProds; i++) {
@@ -51,6 +54,9 @@ int main() {
     pthread_attr_init(&dispatcherAttr);
     for (i = 0; i < NUM_CO_EDITORS; i++) {
         pthread_attr_init(&editorsAttrs[i]);
+        // initialize the semaphores with the appropriate sizes
+        sem_init(&mutex_coed_arr[i], 0, 1);
+        sem_init(&full_coed_arr[i], 0, 0);
     }
     pthread_attr_init(&managerAttr);
 
@@ -74,8 +80,13 @@ int main() {
     if (dispInput == NULL) {
         exit(-1);
     }
+    for (i = 0; i < NUM_CO_EDITORS; i++) {
+        coEditorQueueArr[i] = createUnboundedQueue(&mutex_coed_arr[i], &full_coed_arr[i]);
+    }
     dispInput->numOfProds = numOfProds;
     dispInput->queueArr = producerQueueArr;
+    dispInput->editorQueue = coEditorQueueArr;
+    
 
     // set the producers to produce their articles 
     for (i = 0; i < numOfProds; i++) {
@@ -90,6 +101,15 @@ int main() {
         pthread_join(producers[i], NULL);
     }
     pthread_join(dispatcher, NULL);
+
+    
+    for (i = 0; i < 3; i++) {
+        char * string = "";
+        while (strcmp(string, "DONE")) {
+            string = dequeueUnbounded(coEditorQueueArr[i]);
+            printf("%s\n", string);
+        }
+    }
 
     // freeing all allocated memory
     for (i = 0; i < numOfProds; i++) {

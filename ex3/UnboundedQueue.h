@@ -1,8 +1,15 @@
 #ifndef UNBOUNDED_QUEUE_H
 #define UNBOUNDED_QUEUE_H
 
+#include <malloc.h>
+#include <stdio.h>
+#include <semaphore.h>
+#include <stdlib.h>
+
 // This struct depicts a bounded queue.
 typedef struct {
+    sem_t *mutex;
+    sem_t *full;
     int offsetIn;
     int offsetOut;
     char** arr;
@@ -19,6 +26,6 @@ char * dequeueUnbounded(UnboundedQueue *q);
 This function creates a new Unbounded queue with the given size.
 Returns UnboundedQueue* on success, nullptr on faliure.
 */
-UnboundedQueue* createUnboundedQueue();
+UnboundedQueue* createUnboundedQueue(sem_t *mutex, sem_t *full);
 
 #endif
