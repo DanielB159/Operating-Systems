@@ -37,7 +37,6 @@ void * dispatchProducers(void *inp) {
         if (i == numOfProds) {
             // if all producers are done, exit
             if (numOfDons == numOfProds) {
-                // doneEverything = 1;
                 break;
             } else {
                 // if some producers need to finish, go from beginning

@@ -6,15 +6,14 @@ void * printToScreen(void *inp) {
     BoundedQueue *q = input->q;
     int numTimes = input->numTimes;
     // read articles and print to screen
-    char *article = "";
+    char *article = dequeueBounded(q);;
     int i;
     for(i = 0; i < numTimes; i++) {
-        // if not the first iteration
-        if (strcmp(article, "")) {
-            // print article to the screen
-            printf("%s\n", article);
+        // print article to the screen
+        printf("%s\n", article);
+        if (i != numTimes - 1) {
+            article = dequeueBounded(q);
         }
-        article = dequeueBounded(q);
     }
     return NULL;
 }
