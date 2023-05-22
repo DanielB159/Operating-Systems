@@ -43,11 +43,7 @@ BoundedQueue* createBoundedQueue(int size, sem_t *mutex, sem_t *full, sem_t *emp
     if (!q) {
         return NULL;
     }
-    // // initilize the semaphores with the appropriate sizes
-    // sem_init(mutex, 0, 1);
-    // sem_init(full, 0, 0);
-    // sem_init(empty, 0, size);
-    // set up the parameters for q
+
     q->size = size;
     q->arr = (char **)malloc(size*sizeof(char *));
     if (!q->arr) {
@@ -61,37 +57,3 @@ BoundedQueue* createBoundedQueue(int size, sem_t *mutex, sem_t *full, sem_t *emp
 
     return q;
 }
-
-// int main() {
-//     BoundedQueue *q = createBoundedQueue(3, &mutex, &full, &empty);
-//     char *first = "first", *second = "second", *third = "third", *fourth = "fourth", *fifth = "fifth";
-
-
-
-
-//     enqueueBounded(q, first);
-//     printf("\nout is %d and in is %d\n", q->offsetOut, q->offsetIn);
-//     enqueueBounded(q, second);
-//     printf("\nout is %d and in is %d\n", q->offsetOut, q->offsetIn);
-//     enqueueBounded(q, third);
-//     printf("\nout is %d and in is %d\n", q->offsetOut, q->offsetIn);
-//     char *x = dequeueBounded(q), *y = dequeueBounded(q), *z = dequeueBounded(q);
-//     printf("first: %s, second %s, third: %s", x, y, z);
-//     printf("\nout is %d and in is %d\n", q->offsetOut, q->offsetIn);
-//     printf("\nout is %d and in is %d\n", q->offsetOut, q->offsetIn);
-//     enqueueBounded(q, fourth);
-//     printf("\nout is %d and in is %d\n", q->offsetOut, q->offsetIn);
-//     enqueueBounded(q, fifth);
-//     char *w = dequeueBounded(q), *u = dequeueBounded(q);
-//     printf("\nfourth: %s, fifth %s", w, u);
-
-//     enqueueBounded(q, first);
-//     printf("\nout is %d and in is %d\n", q->offsetOut, q->offsetIn);
-//     enqueueBounded(q, second);
-//     printf("\nout is %d and in is %d\n", q->offsetOut, q->offsetIn);
-//     w = dequeueBounded(q), u = dequeueBounded(q), w = dequeueBounded(q);
-//     printf("\first: %s, second %s", w, u);
-
-
-//     return 0;
-// }
