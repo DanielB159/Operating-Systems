@@ -4,6 +4,7 @@
 #include "Producer.h"
 #include "Dispatcher.h"
 #include "CoEditor.h"
+#include "ScreenManager.h"
 
 #define NUM_CO_EDITORS 3
 
@@ -29,7 +30,7 @@ sem_t empty_screen_manager;
 
 int main() {
     int numOfProds = 5;
-    int sizeOfEachQueue = 10;
+    int sizeOfEachQueue = 30;
     int numOfArticlesInEachQueue = 5;
     int i;
     // initizlize Bounded and Unbounded Queues
@@ -98,8 +99,8 @@ int main() {
     
     // setting up input for the co-editors
     CoEditorInput *coEditorInputs[3];
+    screenManagerQueue = createBoundedQueue(sizeOfEachQueue, &mutex_screen_manager, &full_screen_manager, &empty_screen_manager);
     for (i = 0; i < NUM_CO_EDITORS; i++) {
-        screenManagerQueue = createBoundedQueue(sizeOfEachQueue, &mutex_screen_manager, &full_screen_manager, &empty_screen_manager);
         coEditorInputs[i] = (CoEditorInput *)malloc(sizeof(CoEditorInput));
         if (coEditorInputs[i] == NULL) {
             exit(-1);
@@ -108,6 +109,11 @@ int main() {
         coEditorInputs[i]->screenQueue = screenManagerQueue;
     }
 
+    // setting up input for the screenManager
+    ScreenManagerInput *screenMngInput = (ScreenManagerInput *)malloc(sizeof(ScreenManagerInput));
+    screenMngInput->q = screenManagerQueue;
+    screenMngInput->numTimes = numOfProds*numOfArticlesInEachQueue;
+
     // set the producers to produce their articles 
     for (i = 0; i < numOfProds; i++) {
         pthread_create(&producers[i], &producerAttrs[i], produceArticles, (void *)inputs[i]);
@@ -115,31 +121,23 @@ int main() {
     // set the dispatcher to round robin over the producers
     pthread_create(&dispatcher, &dispatcherAttr, dispatchProducers, (void *)dispInput);
 
-    printf("the first queue is %p\n", coEditorQueueArr[0]);
-    printf("the second queue is %p\n", coEditorQueueArr[1]);
-    printf("the third queue is %p\n", coEditorQueueArr[2]);
     // set the co-editors to recieve input from the dispatcher and edit it
     for (i = 0; i < NUM_CO_EDITORS; i++) {
         pthread_create(&coEditors[i], &editorsAttrs[i], readEditSubmit, (void *)coEditorInputs[i]);
     }
+
+    // // set up the screen manager to read input and print to screen
+    pthread_create(&screenManager, &managerAttr, printToScreen, (void *)screenMngInput);
 
     // waiting to join the threads
     for (i = 0; i < numOfProds; i++) {
         pthread_join(producers[i], NULL);
     }
     pthread_join(dispatcher, NULL);
-        
-    // for (i = 0; i < 3; i++) {
-    //     char * string = "";
-    //     while (strcmp(string, "DONE")) {
-    //         string = dequeueUnbounded(coEditorQueueArr[i]);
-    //         printf("%s\n", string);
-    //     }
-    // }
     for (i = 0; i < NUM_CO_EDITORS; i++) {
         pthread_join(coEditors[i], NULL);
     }
-
+    pthread_join(screenManager, NULL);
 
     // freeing all allocated memory
     for (i = 0; i < numOfProds; i++) {
