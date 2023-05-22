@@ -67,6 +67,7 @@ void * dispatchProducers(void *inp) {
         }
         i++;
     }
+    // if done with all producer queues, indicate to co-editor queues
     enqueueUnbounded(editorQueue[0], "DONE");
     enqueueUnbounded(editorQueue[1], "DONE");
     enqueueUnbounded(editorQueue[2], "DONE");

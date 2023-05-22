@@ -87,6 +87,7 @@ int main() {
     dispInput->queueArr = producerQueueArr;
     dispInput->editorQueue = coEditorQueueArr;
     
+    // setting up input for the co-editors
 
     // set the producers to produce their articles 
     for (i = 0; i < numOfProds; i++) {
@@ -95,6 +96,9 @@ int main() {
     }
     // set the dispatcher to round robin over the producers
     pthread_create(&dispatcher, &dispatcherAttr, dispatchProducers, (void *)dispInput);
+
+
+
 
     // waiting to join the threads
     for (i = 0; i < numOfProds; i++) {
