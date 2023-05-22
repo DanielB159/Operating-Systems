@@ -62,20 +62,18 @@ void setProducersAndScreenMngrNumbers(char *path, int *producerQueueSizes, int *
 
     //go over each line of the file
     while (fgets(line, sizeof(line), configFile)) {
-        
         // if the line contains a number
         if (strcmp(line, "\n")) {
             int numberInLine = atoi(line);
-            printf("%d is the numberInLine\n", numberInLine);
             switch (i) {
-                // this is the current producers number of articles / managerQueue size
-                case 1:
-                    if (producer >= numProds) {
-                        puts("hereeeeeeeeeeeeeeeeeeeeeeeeeeee");
+                case 0:
+                    if (producer == numProds) {
                         *managerQueueSize = numberInLine;
-                    } else {
-                        producerNumArticles[producer] = numberInLine;
                     }
+                    break;
+                // this is the current producers number of articles
+                case 1:
+                    producerNumArticles[producer] = numberInLine;
                     break;
                 // this is the current producer Queue size
                 case 2:
@@ -85,7 +83,6 @@ void setProducersAndScreenMngrNumbers(char *path, int *producerQueueSizes, int *
             }
         } else {
             producer++;
-            printf("the number of producers is %d and numprods is %d\n", producer, numProds);
         }
         i = (i + 1) % 4;
     }
@@ -100,16 +97,13 @@ int main(int argc, char* argv[]) {
     int numOfProds = findNumProducers(argv[1]);
     int producerQueueSizes[numOfProds], producerNumArticles[numOfProds], managerQueueSize;
     setProducersAndScreenMngrNumbers(argv[1], producerQueueSizes, producerNumArticles, &managerQueueSize, numOfProds);
-
-    for (int j = 0; j < numOfProds; j++) {
-        printf("producer number %d, num articles: %d, queue size: %d\n", j, producerNumArticles[j],producerQueueSizes[j]);
-    }
-    printf("the manager queue size is %d\n", managerQueueSize);
-
-
-    int sizeOfEachQueue = 30;
-    int numOfArticlesInEachQueue = 5;
+    int totalArticles = 0;
+    // int sizeOfEachQueue = 30;
+    // int numOfArticlesInEachQueue = 5;
     int i;
+    for (i = 0; i < numOfProds; i++) {
+        totalArticles += producerNumArticles[i];
+    }
     // initizlize Bounded and Unbounded Queues
     BoundedQueue *producerQueueArr[numOfProds];
     UnboundedQueue *coEditorQueueArr[NUM_CO_EDITORS];
@@ -133,7 +127,7 @@ int main(int argc, char* argv[]) {
         // initilize the semaphores with the appropriate sizes
         sem_init(&mutex_arr[i], 0, 1);
         sem_init(&full_arr[i], 0, 0);
-        sem_init(&empty_arr[i], 0, sizeOfEachQueue);
+        sem_init(&empty_arr[i], 0, producerQueueSizes[i]);
     }
     pthread_attr_init(&dispatcherAttr);
     for (i = 0; i < NUM_CO_EDITORS; i++) {
@@ -146,18 +140,18 @@ int main(int argc, char* argv[]) {
     pthread_attr_init(&managerAttr);
     sem_init(&mutex_screen_manager, 0, 1);
     sem_init(&full_screen_manager, 0, 0);
-    sem_init(&empty_screen_manager, 0, sizeOfEachQueue);
+    sem_init(&empty_screen_manager, 0, managerQueueSize);
 
     // setting up the inputs for each producer
     ProducerInputs *inputs[numOfProds];
     for (i = 0; i < numOfProds; i++) {
-        producerQueueArr[i] = createBoundedQueue(sizeOfEachQueue, &mutex_arr[i], &full_arr[i], &empty_arr[i]);
+        producerQueueArr[i] = createBoundedQueue(producerQueueSizes[i], &mutex_arr[i], &full_arr[i], &empty_arr[i]);
         inputs[i] = (ProducerInputs *)malloc(sizeof(ProducerInputs));
         if (inputs[i] == NULL) {
             exit(1);
         }
         // setting up the input
-        inputs[i]->numArticles = numOfArticlesInEachQueue;
+        inputs[i]->numArticles = producerNumArticles[i];
         inputs[i]->numProducer = i;
         inputs[i]->q = producerQueueArr[i];
     }
@@ -176,7 +170,7 @@ int main(int argc, char* argv[]) {
     
     // setting up input for the co-editors
     CoEditorInput *coEditorInputs[3];
-    screenManagerQueue = createBoundedQueue(sizeOfEachQueue, &mutex_screen_manager, &full_screen_manager, &empty_screen_manager);
+    screenManagerQueue = createBoundedQueue(managerQueueSize, &mutex_screen_manager, &full_screen_manager, &empty_screen_manager);
     for (i = 0; i < NUM_CO_EDITORS; i++) {
         coEditorInputs[i] = (CoEditorInput *)malloc(sizeof(CoEditorInput));
         if (coEditorInputs[i] == NULL) {
@@ -189,7 +183,7 @@ int main(int argc, char* argv[]) {
     // setting up input for the screenManager
     ScreenManagerInput *screenMngInput = (ScreenManagerInput *)malloc(sizeof(ScreenManagerInput));
     screenMngInput->q = screenManagerQueue;
-    screenMngInput->numTimes = numOfProds*numOfArticlesInEachQueue;
+    screenMngInput->numTimes = totalArticles;
 
     // set the producers to produce their articles 
     for (i = 0; i < numOfProds; i++) {
