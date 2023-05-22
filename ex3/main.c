@@ -1,4 +1,5 @@
 #include <pthread.h>
+#include <stdlib.h>
 #include "BoundedQueue.h"
 #include "UnboundedQueue.h"
 #include "Producer.h"
@@ -7,6 +8,7 @@
 #include "ScreenManager.h"
 
 #define NUM_CO_EDITORS 3
+#define CONFIG_FILE_MAXLEN 100
 
 pthread_t *producers;
 pthread_attr_t *producerAttrs;
@@ -28,8 +30,83 @@ sem_t mutex_screen_manager;
 sem_t full_screen_manager;
 sem_t empty_screen_manager;
 
-int main() {
-    int numOfProds = 5;
+// this function funds the number of producers in the file
+int findNumProducers(char *path) {
+    FILE *configFile = fopen(path, "r");
+    if (configFile == NULL) {
+        exit(-1);
+    }
+    // set up variables for going over the file
+    char line[CONFIG_FILE_MAXLEN];
+    int numProds = 0;
+    // read lines from the file and count the number of blank lines
+    while (fgets(line, sizeof(line), configFile) != NULL) {
+        if (!strcmp(line, "\n")) {
+            numProds++;
+        }
+    }
+    fclose(configFile);
+    return numProds;
+}
+
+// this function reads the config file and initializes the producer queue sizes and their number of articles 
+void setProducersAndScreenMngrNumbers(char *path, int *producerQueueSizes, int *producerNumArticles, int *managerQueueSize, int numProds) {
+    FILE *configFile = fopen(path, "r");
+    if (configFile == NULL) {
+        exit(-1);
+    }
+
+    // set up variables for goinf over the file
+    char line[CONFIG_FILE_MAXLEN];
+    int i = 0, producer = 0;
+
+    //go over each line of the file
+    while (fgets(line, sizeof(line), configFile)) {
+        
+        // if the line contains a number
+        if (strcmp(line, "\n")) {
+            int numberInLine = atoi(line);
+            printf("%d is the numberInLine\n", numberInLine);
+            switch (i) {
+                // this is the current producers number of articles / managerQueue size
+                case 1:
+                    if (producer >= numProds) {
+                        puts("hereeeeeeeeeeeeeeeeeeeeeeeeeeee");
+                        *managerQueueSize = numberInLine;
+                    } else {
+                        producerNumArticles[producer] = numberInLine;
+                    }
+                    break;
+                // this is the current producer Queue size
+                case 2:
+                    producerQueueSizes[producer] = numberInLine;
+                    break;
+                default:
+            }
+        } else {
+            producer++;
+            printf("the number of producers is %d and numprods is %d\n", producer, numProds);
+        }
+        i = (i + 1) % 4;
+    }
+
+    fclose(configFile);
+}
+
+
+
+int main(int argc, char* argv[]) {
+
+    int numOfProds = findNumProducers(argv[1]);
+    int producerQueueSizes[numOfProds], producerNumArticles[numOfProds], managerQueueSize;
+    setProducersAndScreenMngrNumbers(argv[1], producerQueueSizes, producerNumArticles, &managerQueueSize, numOfProds);
+
+    for (int j = 0; j < numOfProds; j++) {
+        printf("producer number %d, num articles: %d, queue size: %d\n", j, producerNumArticles[j],producerQueueSizes[j]);
+    }
+    printf("the manager queue size is %d\n", managerQueueSize);
+
+
     int sizeOfEachQueue = 30;
     int numOfArticlesInEachQueue = 5;
     int i;

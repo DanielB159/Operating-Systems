@@ -45,11 +45,6 @@ void * produceArticles(void *inp) {
         // printf("producer %d now inserting: %s into queue...\n", numProducer, article);
         enqueueBounded(q, article);
 
-        // printf("now the current queue is this and the tid is: %ld\n", pthread_self());
-        // for (int j = 0; j <= i; j++) {
-        //     printf("%s\n", q->arr[j]);
-        // }
-
         // incrementing the correct counter
         *numToIncrement = *numToIncrement + 1;
     }
