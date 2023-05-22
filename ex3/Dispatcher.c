@@ -52,7 +52,6 @@ void * dispatchProducers(void *inp) {
                 doneProducer[i] = 1;
             } else {
                 char *type = findType(article);
-                // printf("%s\n and the type is %s\n", article, type);
                 if (!strcmp(type, "SPORTS")) {
                     enqueueUnbounded(editorQueue[0], article);
                 } else if (!strcmp(type, "NEWS")) {
