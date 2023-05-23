@@ -211,15 +211,38 @@ int main(int argc, char* argv[]) {
     pthread_join(screenManager, NULL);
 
     // freeing all allocated memory
-    for (i = 0; i < numOfProds; i++) {
-        free(inputs[i]);
-        producerQueueArr[i]->arr;
-    }
 
     free(producers);
     free(producerAttrs);
+    for (i = 0; i < numOfProds; i++) {
+        // destroy the semaphores with the appropriate sizes
+        sem_destroy(&mutex_arr[i]);
+        sem_destroy(&full_arr[i]);
+        sem_destroy(&empty_arr[i]);
+        // free the queues and the inputs
+        free(producerQueueArr[i]->arr);
+        free(producerQueueArr[i]);
+        free(inputs[i]);
+    }
     free(mutex_arr);
     free(full_arr);
     free(empty_arr);
+
+    free(dispInput);
+    for (i = 0; i < NUM_CO_EDITORS; i++) {
+        // destroy the semaphores with the appropriate sizes
+        sem_destroy(&mutex_coed_arr[i]);
+        sem_destroy(&full_coed_arr[i]);
+        // free the queues and the inputs
+        free(coEditorQueueArr[i]->arr);
+        free(coEditorQueueArr[i]);
+        free(coEditorInputs[i]);
+    }
+    free(mutex_coed_arr);
+    free(full_coed_arr);
+    free(screenManagerQueue->arr);
+    free(screenManagerQueue);
+    free(screenMngInput);
+
     return 0;
 }

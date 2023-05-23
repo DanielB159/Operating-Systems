@@ -1,20 +1,16 @@
 #include "Dispatcher.h"
 
 char * findType(char *prodString) {
-    char* token;
-    // create a copy of the original string
-    char* copy = strdup(prodString);
+    char *token;
     
     // Get the third token using space (" ") as the delimiter
-    token = strtok(copy, " ");
+    token = strtok(prodString, " ");
     token = strtok(NULL, " ");
     token = strtok(NULL, " ");
 
     // return the token
     return token;
 }
-
-
 
 void * dispatchProducers(void *inp) {
     // parse inputs
@@ -51,7 +47,13 @@ void * dispatchProducers(void *inp) {
             if (!strcmp(article, "DONE")) {
                 doneProducer[i] = 1;
             } else {
-                char *type = findType(article);
+                // create copy of article
+                char *copy = malloc((sizeof(char) + 1)*strlen(article));
+                if (copy == NULL) {
+                    exit(-1);
+                }
+                strcpy(copy, article);
+                char *type = findType(copy);
                 if (!strcmp(type, "SPORTS")) {
                     enqueueUnbounded(editorQueue[0], article);
                 } else if (!strcmp(type, "NEWS")) {
@@ -59,6 +61,7 @@ void * dispatchProducers(void *inp) {
                 } else {
                     enqueueUnbounded(editorQueue[2], article);
                 }
+                free(copy);
             }
         } else {
             numOfDons++;

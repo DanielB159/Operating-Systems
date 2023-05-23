@@ -11,9 +11,11 @@ void * printToScreen(void *inp) {
     for(i = 0; i < numTimes; i++) {
         // print article to the screen
         printf("%s\n", article);
+        free(article);
         if (i != numTimes - 1) {
             article = dequeueBounded(q);
         }
     }
+    printf("DONE\n");
     return NULL;
 }
