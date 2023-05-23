@@ -1,10 +1,5 @@
 #include "CoEditor.h"
 
-#include <threads.h>
-#include <sys/types.h>
-#include <unistd.h>
-#include <sys/syscall.h>
-
 // this function tells the co-editor to read from the dispatcher queue, edit, and write to the screen-manager queue
 void * readEditSubmit(void *inp) {
     CoEditorInput *input = (CoEditorInput *)inp;
